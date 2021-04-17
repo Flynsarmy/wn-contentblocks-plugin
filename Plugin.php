@@ -39,6 +39,8 @@ class Plugin extends PluginBase
         Event::listen('cms.template.processSettingsBeforeSave', function (CmsController $controller, object &$dataHolder) {
             // Unset the content block data so it doesn't save to the model
             if (isset($dataHolder->settings['content_blocks'])) {
+                $this->saveContentBlocks($dataHolder->settings['content_blocks']);
+
                 unset($dataHolder->settings['content_blocks']);
             }
         });
@@ -96,16 +98,13 @@ class Plugin extends PluginBase
      */
     public function getContentBlock(string $filename): string
     {
-        $content = json_decode(
-            CmsContent::load(CmsTheme::getActiveTheme(), $filename),
-            true
-        );
+        $content = CmsContent::load(CmsTheme::getActiveTheme(), $filename);
 
         if (!$content) {
             return '';
         }
 
-        return $content['content'];
+        return $content->content;
     }
 
     /**
@@ -139,5 +138,30 @@ class Plugin extends PluginBase
         }
 
         return "This block may use the following variables: {{ " . implode(' }}, {{', $args) . ' }}';
+    }
+
+    /**
+     * Saves the content block data supplied by our form into the respective
+     * CMS content blocks.
+     *
+     * @param array $blocks
+     * @return void
+     */
+    public function saveContentBlocks(array $blocks)
+    {
+        foreach ($blocks as $fileName => $markup) {
+            // Load the content block
+            $model = CmsContent::load(CmsTheme::getActiveTheme(), $fileName);
+
+            // If it doesn't exist, create it
+            if (!$model) {
+                $model = new CmsContent([
+                    'fileName' => $fileName,
+                ]);
+            }
+
+            $model->markup = $markup;
+            $model->save();
+        }
     }
 }
