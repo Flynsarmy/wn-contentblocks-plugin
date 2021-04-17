@@ -165,7 +165,7 @@ class Plugin extends PluginBase
 
     //         return $result;
     //     });
-    // }
+    }
 
     // public function registerFormWidgets()
     // {
@@ -260,11 +260,11 @@ class Plugin extends PluginBase
         }
     }
 
-    // /**
-    //  * Resolves a template type to its class name. Taken from CmsController.
-    //  * @param string $type
-    //  * @return string
-    //  */
+    /**
+     * Resolves a template type to its class name. Taken from CmsController.
+     * @param string $type
+     * @return string
+     */
     // protected function resolveTypeClassName($type)
     // {
     //     $types = [
