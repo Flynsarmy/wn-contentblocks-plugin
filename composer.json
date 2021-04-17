@@ -1,0 +1,17 @@
+{
+    "name": "flynsarmy/wn-codeblocks-plugin",
+    "type": "winter-plugin",
+    "description": "Allow clients to update content blocks directly from the layouts/pages/partials that use them.",
+    "homepage": "https://github.com/Flynsarmy/wn-idehelper-plugin",
+    "keywords": ["winter", "wintercms", "laravel", "ide", "helper", "vscode", "phpstorm", "php"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Flynsarmy",
+            "homepage": "https://www.flynsarmy.com/"
+        }
+    ],
+    "require": {
+        "composer/installers": "~1.0"
+    }
+}
