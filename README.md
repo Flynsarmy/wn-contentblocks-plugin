@@ -4,6 +4,12 @@ Allow clients to update content blocks directly from the layouts/pages/partials 
 
 ![](https://github.com/Flynsarmy/wn-contentblocks-plugin/blob/master/assets/images/marketplace/content-tab.png?raw=true)
 
+## Description
+
+It's cumbersome to go to the *CMS - Content* section, create a content block, get its filename then add the block to your layout/page/partial. Then every time you want to edit the block you need to head back to the *Content* area and find the correct one to update. 
+
+With this plugin you can simply reference your content blocks in the markup area and they'll appear in a new *Content* tab right there on the layout/page/partial you're currently working on. Magic!
+
 ## Installation
 
 * `git clone` into */plugins/flynsarmy/contentblocks*
