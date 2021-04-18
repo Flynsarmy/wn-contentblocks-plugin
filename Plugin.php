@@ -2,8 +2,6 @@
 
 namespace Flynsarmy\ContentBlocks;
 
-use ApplicationException;
-use Backend\Classes\Controller as BackendController;
 use Backend\Widgets\Form;
 use Cms\Classes\Content as CmsContent;
 use Cms\Classes\Theme as CmsTheme;
@@ -12,8 +10,7 @@ use Cms\Classes\Page as CmsPage;
 use Cms\Classes\Partial as CmsPartial;
 use Cms\Controllers\Index as CmsController;
 use Event;
-use Lang;
-use Request;
+use Flynsarmy\ContentBlocks\Classes\Helpers;
 use System\Classes\PluginBase;
 
 class Plugin extends PluginBase
@@ -45,14 +42,10 @@ class Plugin extends PluginBase
             }
 
             // Do the actual updating
-            $this->saveContentBlocks(
-                $dataHolder->settings['content_blocks_dictionary'],
-                $dataHolder->settings['content_blocks']
-            );
+            $this->saveContentBlocks($dataHolder->settings['content_blocks']);
 
             // Unset the content block data so it doesn't save to the model
             unset($dataHolder->settings['content_blocks']);
-            unset($dataHolder->settings['content_blocks_dictionary']);
         });
 
         /*
@@ -78,16 +71,21 @@ class Plugin extends PluginBase
                 return;
             }
 
+            // Remove all fields we don't have permission to see
+            // EDIT: Layouts/Pages/Partials clear their markup/code fields if
+            //       they're removed from teh form
+            // foreach ($widget->getFields() as $field) {
+            //     if ($field->tab && in_array($field->tab, ['cms::lang.editor.markup', 'cms::lang.editor.code'])) {
+            //         $widget->removeField($field->fieldName);
+            //     }
+            // }
+
             $fields = [];
             // Block names (filepaths) can include / characters which aren't
-            // allowed in HTML ID attributes, so instead use an md5 of the name
-            // and add a hidden dictionary field which we'll use later to
-            // figure out which md5 belongs to which content block.
-            $dictionary = [];
+            // allowed in HTML ID attributes, so encode them for the form
             foreach ($blocks[0] as $i => $block) {
                 $blockName = $blocks['name'][$i];
-                $blockId = md5($blockName);
-                $dictionary[$blockId] = $blockName;
+                $blockId = Helpers::base64EncodeUrl($blockName);
 
                 // Add the field to the form
                 $fields["settings[content_blocks][$blockId]"] = [
@@ -102,18 +100,17 @@ class Plugin extends PluginBase
                     $this->getContentBlock($blockName);
             }
 
-            $widget->model->settings['content_blocks_dictionary'] = json_encode($dictionary);
-
-            $fields["settings[content_blocks_dictionary]"] = [
-                'type' => 'Flynsarmy\ContentBlocks\FormWidgets\Hidden',
-                'tab' => 'Content',
-            ];
-
             $widget->addFields($fields, 'primary');
         });
 
         /*
          * Reload the content block fields on save
+         * EDIT: The idea behind this is to automatically add/remove/update content
+         *       blocks displayed on the 'Content' tab as the admin saves the
+         *       layout/page/partial, however the code below only updates - it
+         *       doesn't add or remove.
+         *
+         *       Need to reload primaryTabs instead. Not sure how to do that yet.
          */
     //     Event::listen('backend.ajax.beforeRunHandler', function (BackendController $controller, string $handler) {
     //         if (!$controller instanceof CmsController) {
@@ -166,16 +163,6 @@ class Plugin extends PluginBase
     //         return $result;
     //     });
     }
-
-    // public function registerFormWidgets()
-    // {
-    //     return [
-    //         'Flynsarmy\ContentBlocks\FormWidgets\Hidden' => [
-    //             'label' => 'TagBox',
-    //             'alias' => 'contentblocks-hidden'
-    //         ],
-    //     ];
-    // }
 
     /**
      * Returns the contents of the content block with given filename or empty
@@ -234,17 +221,13 @@ class Plugin extends PluginBase
      * Saves the content block data supplied by our form into the respective
      * CMS content blocks.
      *
-     * @param string $dictionary
      * @param array $blocks
      * @return void
      */
-    public function saveContentBlocks(string $dictionary, array $blocks): void
+    public function saveContentBlocks(array $blocks): void
     {
-        // Array of md5 => fileName
-        $dictionary = json_decode($dictionary, true);
-
-        foreach ($blocks as $fileId => $markup) {
-            $fileName = $dictionary[$fileId];
+        foreach ($blocks as $encodedFileName => $markup) {
+            $fileName = Helpers::base64DecodeUrl($encodedFileName);
             // Load the content block
             $model = CmsContent::load(CmsTheme::getActiveTheme(), $fileName);
 
